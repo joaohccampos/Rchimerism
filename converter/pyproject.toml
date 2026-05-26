@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "genemapper-converter"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "polars>=0.20",
+    "typer>=0.12",
+    "pydantic-settings>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "pytest-mock>=3.14",
+    "bandit>=1.7",
+]
+
+[project.scripts]
+genemapper-converter = "genemapper_converter.__main__:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/genemapper_converter"]
+
+[tool.ruff]
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+strict = true
+mypy_path = "src"
+explicit_package_bases = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=src --cov-branch"

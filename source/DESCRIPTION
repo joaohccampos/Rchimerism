@@ -1,0 +1,15 @@
+Package: Rchimerism
+Type: Package
+Title: Interactive R Package for Automation of Chimerism Test Data Analysis
+Version: 0.1.0
+Imports: shiny, DT, shinyFiles
+Suggests: testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Authors@R: c(person("Zohair Siddiqui",email="zohair.siddiqui@slu.edu",role=c("aut",
+  "cre")),person("Tae-Hyuk (Ted) Ahn",email="ted.ahn@slu.edu",role="aut"),
+  person("Huazhang Guo",email="huazhang.guo@health.slu.edu",role="aut"))
+Maintainer: Zohair Siddiqui <zohair.siddiqui@slu.edu>
+Description: Tool used to automate a chimerism test and visualize data matrices
+License: file LICENSE
+Encoding: UTF-8
+RoxygenNote: 7.3.2

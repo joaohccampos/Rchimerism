@@ -1,0 +1,7 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^Rchimerism_.*\.tar\.gz$
+^Data_examples\.zip$
+^figures/
+^_gitignore$
+^inst/doc$

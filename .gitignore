@@ -1,0 +1,23 @@
+# Raw GeneMapper export files (dados clínicos originais)
+genemapper_export.txt
+genemapper_result.txt
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+converter/.venv/
+.coverage
+.coverage.*
+htmlcov/
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+
+# Editor
+.vscode/
+.idea/
