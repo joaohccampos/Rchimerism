@@ -2,7 +2,7 @@ Package: Rchimerism
 Type: Package
 Title: Interactive R Package for Automation of Chimerism Test Data Analysis
 Version: 0.1.0
-Imports: shiny, DT, shinyFiles
+Imports: shiny, DT, shinyFiles, writexl
 Suggests: testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Authors@R: c(person("Zohair Siddiqui",email="zohair.siddiqui@slu.edu",role=c("aut",

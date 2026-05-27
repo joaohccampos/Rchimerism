@@ -245,8 +245,59 @@ build_server <- function() {
 
       return_xls <- function() {
         shiny::downloadHandler(
-          filename = function() { "results.xls" },
-          content  = function(fname) write.table(results, fname, sep = "\t", col.names = FALSE)
+          filename = function() { "results.xlsx" },
+          content  = function(fname) {
+            export <- as.data.frame(results)
+            export$Marker <- rownames(results)
+            export <- export[, c(ncol(export), 1:(ncol(export) - 1))]
+            rownames(export) <- NULL
+
+            base_rows <- nrow(export)
+
+            if (input$donor_type == 1) {
+              donor_mean <- na.omit(results[, "Donor%_Mean"])[1] * 100
+              recip_mean <- na.omit(results[, "Recipient%_Mean"])[1] * 100
+              donor_sd   <- na.omit(results[, "Donor%_SD"])[1] * 100
+              donor_cv   <- na.omit(results[, "Donor%_CV"])[1] * 100
+
+              labels <- c("", "SUMMARY", "Donor%_Mean (%)", "Recipient%_Mean (%)", "Donor%_SD (%)", "Donor%_CV (%)")
+              export[base_rows + seq_along(labels), 1] <- labels
+              export[base_rows + 3, 4] <- donor_mean
+              export[base_rows + 4, 7] <- recip_mean
+              export[base_rows + 5, 5] <- donor_sd
+              export[base_rows + 6, 6] <- donor_cv
+            } else {
+              data_only <- results[-nrow(results), ]
+              d1_mean <- na.omit(data_only[, "Donor_1%_Mean"])[1] * 100
+              d2_mean <- na.omit(data_only[, "Donor_2%_Mean"])[1] * 100
+              r_mean  <- na.omit(data_only[, "Recipient%_Mean"])[1] * 100
+              d1_sd   <- na.omit(data_only[, "Donor_1%_SD"])[1] * 100
+              d2_sd   <- na.omit(data_only[, "Donor_2%_SD"])[1] * 100
+              r_sd    <- na.omit(data_only[, "Recipient%_SD"])[1] * 100
+              d1_cv   <- na.omit(data_only[, "Donor_1%_CV"])[1] * 100
+              d2_cv   <- na.omit(data_only[, "Donor_2%_CV"])[1] * 100
+              r_cv    <- na.omit(data_only[, "Recipient%_CV"])[1] * 100
+
+              labels <- c(
+                "", "SUMMARY",
+                "Donor_1%_Mean (%)", "Donor_2%_Mean (%)", "Recipient%_Mean (%)",
+                "Donor_1%_SD (%)", "Donor_2%_SD (%)", "Recipient%_SD (%)",
+                "Donor_1%_CV (%)", "Donor_2%_CV (%)", "Recipient%_CV (%)"
+              )
+              export[base_rows + seq_along(labels), 1] <- labels
+              export[base_rows + 3, 3]  <- d1_mean
+              export[base_rows + 4, 7]  <- d2_mean
+              export[base_rows + 5, 11] <- r_mean
+              export[base_rows + 6, 4]  <- d1_sd
+              export[base_rows + 7, 8]  <- d2_sd
+              export[base_rows + 8, 12] <- r_sd
+              export[base_rows + 9, 5]  <- d1_cv
+              export[base_rows + 10, 9]  <- d2_cv
+              export[base_rows + 11, 13] <- r_cv
+            }
+
+            writexl::write_xlsx(export, fname)
+          }
         )
       }
 
