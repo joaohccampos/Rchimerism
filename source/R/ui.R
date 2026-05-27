@@ -9,7 +9,8 @@ build_ui <- function() {
     shiny::fluidRow(
       shiny::column(3,
          shiny::radioButtons("directory_mode", label = NULL,
-                             choices = list("Normal Mode" = 1, "Directory Mode" = 2),
+                             choices = list("Normal Mode" = 1, "Directory Mode" = 2,
+                                            "GeneMapper Mode" = 3),
                              selected = 1),
 
          shiny::fileInput("markers", label = "Marker File (default: GlobalFiler 23-loci)",
@@ -42,7 +43,16 @@ build_ui <- function() {
           shiny::br()
         ),
 
-        shiny::actionButton("run_locSD_button", "Read input files")
+        shiny::conditionalPanel("input.directory_mode == 3",
+          shiny::fileInput("gm_file", label = "GeneMapper Export File (.txt / .tsv)",
+                           accept = c(".txt", ".tsv")),
+          shiny::uiOutput("gm_role_ui")
+        ),
+
+        shiny::actionButton("run_locSD_button", "Read input files"),
+        shiny::br(),
+        shiny::br(),
+        shiny::actionButton("new_analysis_button", "New Analysis")
       ),
 
       shiny::conditionalPanel("input.donor_type == 1",

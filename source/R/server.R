@@ -9,6 +9,66 @@ build_server <- function() {
     shinyFiles::shinyDirChoose(input, 'directory_select', roots = volumes, session = session)
     dirname <- shiny::reactive({ shinyFiles::parseDirPath(volumes, input$directory_select) })
 
+    gm_parsed <- shiny::reactive({
+      if (input$directory_mode != 3) return(NULL)
+      if (is.null(input$gm_file)) return(NULL)
+      parse_genemapper_tsv(input$gm_file$datapath)
+    })
+
+    output$gm_role_ui <- shiny::renderUI({
+      df <- gm_parsed()
+      if (is.null(df)) return(NULL)
+
+      if (!"Sample.File.Name" %in% colnames(df)) {
+        return(shiny::p("Error: file does not contain a 'Sample File Name' column."))
+      }
+
+      sample_names <- list_genemapper_samples(df)
+      if (length(sample_names) == 0) {
+        return(shiny::p("No samples found in file."))
+      }
+
+      build_label <- function(name) {
+        role <- detect_genemapper_role(name)
+        if (!is.null(role)) paste0(name, "  [auto: ", role, "]") else name
+      }
+      choices     <- stats::setNames(sample_names, sapply(sample_names, build_label))
+      all_choices <- c("--- select ---" = "", choices)
+
+      if (input$donor_type == 1) {
+        shiny::tagList(
+          shiny::selectInput("gm_donor",     "Donor",
+                             choices = all_choices,
+                             selected = find_auto_role(sample_names, "donor")),
+          shiny::selectInput("gm_recipient", "Recipient",
+                             choices = all_choices,
+                             selected = find_auto_role(sample_names, "recipient")),
+          shiny::selectInput("gm_sample",    "Sample (chimera)",
+                             choices = all_choices,
+                             selected = find_auto_role(sample_names, "sample"))
+        )
+      } else {
+        shiny::tagList(
+          shiny::selectInput("gm_donor1",    "Donor 1",
+                             choices = all_choices,
+                             selected = find_auto_role(sample_names, "donor")),
+          shiny::selectInput("gm_donor2",    "Donor 2",
+                             choices = all_choices,
+                             selected = ""),
+          shiny::selectInput("gm_recipient", "Recipient",
+                             choices = all_choices,
+                             selected = find_auto_role(sample_names, "recipient")),
+          shiny::selectInput("gm_sample",    "Sample (chimera)",
+                             choices = all_choices,
+                             selected = find_auto_role(sample_names, "sample"))
+        )
+      }
+    })
+
+    shiny::observeEvent(input$new_analysis_button, {
+      session$reload()
+    })
+
     initialize_dir_mode_vars <- function() {
       ddata_path  <- paste0(dirname(), "/../../ddata.txt")
       d1data_path <- paste0(dirname(), "/../../d1data.txt")
@@ -49,7 +109,7 @@ build_server <- function() {
         }
         rdata <- safe_read_delim(input$rdata$datapath, "recipient data")
         sdata <- safe_read_delim(input$sdata$datapath, "sample data")
-      } else {
+      } else if (input$directory_mode == 2) {
         dir_mode_vars <- initialize_dir_mode_vars()
         if (input$donor_type == 1) {
           ddata <- safe_read_delim(dir_mode_vars[["ddata"]], "donor data")
@@ -59,6 +119,38 @@ build_server <- function() {
         }
         rdata <- safe_read_delim(dir_mode_vars[["rdata"]], "recipient data")
         sdata <- safe_read_delim(dir_mode_vars[["sdata"]], "sample data")
+      } else {
+        df <- gm_parsed()
+        shiny::validate(shiny::need(!is.null(df), "Upload a GeneMapper export file first."))
+
+        if (input$donor_type == 1) {
+          shiny::validate(
+            shiny::need(!is.null(input$gm_donor) && nchar(input$gm_donor) > 0,
+                        "Select a donor sample."),
+            shiny::need(!is.null(input$gm_recipient) && nchar(input$gm_recipient) > 0,
+                        "Select a recipient sample."),
+            shiny::need(!is.null(input$gm_sample) && nchar(input$gm_sample) > 0,
+                        "Select a chimera sample.")
+          )
+          ddata <- extract_genemapper_sample(df, input$gm_donor)
+          rdata <- extract_genemapper_sample(df, input$gm_recipient)
+          sdata <- extract_genemapper_sample(df, input$gm_sample)
+        } else {
+          shiny::validate(
+            shiny::need(!is.null(input$gm_donor1) && nchar(input$gm_donor1) > 0,
+                        "Select donor 1."),
+            shiny::need(!is.null(input$gm_donor2) && nchar(input$gm_donor2) > 0,
+                        "Select donor 2."),
+            shiny::need(!is.null(input$gm_recipient) && nchar(input$gm_recipient) > 0,
+                        "Select a recipient sample."),
+            shiny::need(!is.null(input$gm_sample) && nchar(input$gm_sample) > 0,
+                        "Select a chimera sample.")
+          )
+          ddata  <- extract_genemapper_sample(df, input$gm_donor1)
+          d2data <- extract_genemapper_sample(df, input$gm_donor2)
+          rdata  <- extract_genemapper_sample(df, input$gm_recipient)
+          sdata  <- extract_genemapper_sample(df, input$gm_sample)
+        }
       }
 
       markers_path <- if (!is.null(input$markers)) {
@@ -331,6 +423,5 @@ build_server <- function() {
 
     })
 
-    session$onSessionEnded(shiny::stopApp)
   }
 }
