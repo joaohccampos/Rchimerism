@@ -377,6 +377,41 @@ build_server <- function() {
         input$gm_sample
       }
 
+      names_list <- if (input$directory_mode == 1) {
+        if (input$donor_type == 1) {
+          list(donor     = tools::file_path_sans_ext(input$ddata$name),
+               recipient = tools::file_path_sans_ext(input$rdata$name),
+               sample    = tools::file_path_sans_ext(input$sdata$name))
+        } else {
+          list(donor1    = tools::file_path_sans_ext(input$ddata$name),
+               donor2    = tools::file_path_sans_ext(input$d2data$name),
+               recipient = tools::file_path_sans_ext(input$rdata$name),
+               sample    = tools::file_path_sans_ext(input$sdata$name))
+        }
+      } else if (input$directory_mode == 2) {
+        if (input$donor_type == 1) {
+          list(donor     = "ddata",
+               recipient = "rdata",
+               sample    = basename(dirname()))
+        } else {
+          list(donor1    = "d1data",
+               donor2    = "d2data",
+               recipient = "rdata",
+               sample    = basename(dirname()))
+        }
+      } else {
+        if (input$donor_type == 1) {
+          list(donor     = input$gm_donor,
+               recipient = input$gm_recipient,
+               sample    = input$gm_sample)
+        } else {
+          list(donor1    = input$gm_donor1,
+               donor2    = input$gm_donor2,
+               recipient = input$gm_recipient,
+               sample    = input$gm_sample)
+        }
+      }
+
       return_xls <- function() {
         shiny::downloadHandler(
           filename = function() { paste0(sample_name, "_results.xlsx") },
@@ -395,14 +430,19 @@ build_server <- function() {
               donor_cv      <- na.omit(results[, "Donor%_CV"])[1] * 100
               n_informative <- sum(!is.na(results[, "Donor%_Mean"]))
 
-              labels <- c("", "SUMMARY", "Donor%_Mean (%)", "Recipient%_Mean (%)",
+              labels <- c("", "SUMMARY",
+                          "Donor", "Recipient", "Sample (chimera)",
+                          "Donor%_Mean (%)", "Recipient%_Mean (%)",
                           "Donor%_SD (%)", "Donor%_CV (%)", "Informative Loci (N)")
               export[base_rows + seq_along(labels), 1] <- labels
-              export[base_rows + 3, 4] <- donor_mean
-              export[base_rows + 4, 7] <- recip_mean
-              export[base_rows + 5, 5] <- donor_sd
-              export[base_rows + 6, 6] <- donor_cv
-              export[base_rows + 7, 2] <- n_informative
+              export[base_rows + 3,  2] <- names_list$donor
+              export[base_rows + 4,  2] <- names_list$recipient
+              export[base_rows + 5,  2] <- names_list$sample
+              export[base_rows + 6,  4] <- donor_mean
+              export[base_rows + 7,  7] <- recip_mean
+              export[base_rows + 8,  5] <- donor_sd
+              export[base_rows + 9,  6] <- donor_cv
+              export[base_rows + 10, 2] <- n_informative
             } else {
               data_only  <- results[-nrow(results), ]
               d1_mean    <- na.omit(data_only[, "Donor_1%_Mean"])[1] * 100
@@ -420,24 +460,29 @@ build_server <- function() {
 
               labels <- c(
                 "", "SUMMARY",
+                "Donor 1", "Donor 2", "Recipient", "Sample (chimera)",
                 "Donor_1%_Mean (%)", "Donor_2%_Mean (%)", "Recipient%_Mean (%)",
                 "Donor_1%_SD (%)", "Donor_2%_SD (%)", "Recipient%_SD (%)",
                 "Donor_1%_CV (%)", "Donor_2%_CV (%)", "Recipient%_CV (%)",
                 "Inf. Loci D1 (N)", "Inf. Loci D2 (N)", "Inf. Loci R (N)"
               )
               export[base_rows + seq_along(labels), 1] <- labels
-              export[base_rows + 3, 3]  <- d1_mean
-              export[base_rows + 4, 7]  <- d2_mean
-              export[base_rows + 5, 11] <- r_mean
-              export[base_rows + 6, 4]  <- d1_sd
-              export[base_rows + 7, 8]  <- d2_sd
-              export[base_rows + 8, 12] <- r_sd
-              export[base_rows + 9, 5]  <- d1_cv
-              export[base_rows + 10, 9] <- d2_cv
-              export[base_rows + 11, 13] <- r_cv
-              export[base_rows + 12, 2]  <- n_inf_d1
-              export[base_rows + 13, 6]  <- n_inf_d2
-              export[base_rows + 14, 10] <- n_inf_r
+              export[base_rows + 3,  2] <- names_list$donor1
+              export[base_rows + 4,  2] <- names_list$donor2
+              export[base_rows + 5,  2] <- names_list$recipient
+              export[base_rows + 6,  2] <- names_list$sample
+              export[base_rows + 7,  3]  <- d1_mean
+              export[base_rows + 8,  7]  <- d2_mean
+              export[base_rows + 9,  11] <- r_mean
+              export[base_rows + 10, 4]  <- d1_sd
+              export[base_rows + 11, 8]  <- d2_sd
+              export[base_rows + 12, 12] <- r_sd
+              export[base_rows + 13, 5]  <- d1_cv
+              export[base_rows + 14, 9]  <- d2_cv
+              export[base_rows + 15, 13] <- r_cv
+              export[base_rows + 16, 2]  <- n_inf_d1
+              export[base_rows + 17, 6]  <- n_inf_d2
+              export[base_rows + 18, 10] <- n_inf_r
             }
 
             writexl::write_xlsx(export, fname)
