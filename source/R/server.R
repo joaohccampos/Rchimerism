@@ -206,7 +206,8 @@ build_server <- function() {
         rm      <- loc_dd_output[[15]]
 
         chi_dd_output <- chiDD(sdata, markers, profile,
-                               ru, rt, rnn, d1nn, d2nn, d1u, d2u, d1t, d2t, r)
+                               ru, rt, rnn, d1nn, d2nn, d1u, d2u, d1t, d2t, r,
+                               ignore_unknown_alleles = input$ignore_unknown_alleles)
         is_coherent_input(chi_dd_output)
         check_sample_data(chi_dd_output)
 
@@ -224,7 +225,8 @@ build_server <- function() {
         d       <- loc_sd_output[[7]]
         r       <- loc_sd_output[[8]]
 
-        chi_sd_output <- chiSD(sdata, markers, profile, rt, dt, d, r)
+        chi_sd_output <- chiSD(sdata, markers, profile, rt, dt, d, r,
+                               ignore_unknown_alleles = input$ignore_unknown_alleles)
         is_coherent_input(chi_sd_output)
         check_sample_data(chi_sd_output)
 
@@ -335,9 +337,17 @@ build_server <- function() {
         }
       }
 
+      sample_name <- if (input$directory_mode == 1) {
+        tools::file_path_sans_ext(input$sdata$name)
+      } else if (input$directory_mode == 2) {
+        basename(dirname())
+      } else {
+        input$gm_sample
+      }
+
       return_xls <- function() {
         shiny::downloadHandler(
-          filename = function() { "results.xlsx" },
+          filename = function() { paste0(sample_name, "_results.xlsx") },
           content  = function(fname) {
             export <- as.data.frame(results)
             export$Marker <- rownames(results)
@@ -347,34 +357,41 @@ build_server <- function() {
             base_rows <- nrow(export)
 
             if (input$donor_type == 1) {
-              donor_mean <- na.omit(results[, "Donor%_Mean"])[1] * 100
-              recip_mean <- na.omit(results[, "Recipient%_Mean"])[1] * 100
-              donor_sd   <- na.omit(results[, "Donor%_SD"])[1] * 100
-              donor_cv   <- na.omit(results[, "Donor%_CV"])[1] * 100
+              donor_mean    <- na.omit(results[, "Donor%_Mean"])[1] * 100
+              recip_mean    <- na.omit(results[, "Recipient%_Mean"])[1] * 100
+              donor_sd      <- na.omit(results[, "Donor%_SD"])[1] * 100
+              donor_cv      <- na.omit(results[, "Donor%_CV"])[1] * 100
+              n_informative <- sum(!is.na(results[, "Donor%_Mean"]))
 
-              labels <- c("", "SUMMARY", "Donor%_Mean (%)", "Recipient%_Mean (%)", "Donor%_SD (%)", "Donor%_CV (%)")
+              labels <- c("", "SUMMARY", "Donor%_Mean (%)", "Recipient%_Mean (%)",
+                          "Donor%_SD (%)", "Donor%_CV (%)", "Informative Loci (N)")
               export[base_rows + seq_along(labels), 1] <- labels
               export[base_rows + 3, 4] <- donor_mean
               export[base_rows + 4, 7] <- recip_mean
               export[base_rows + 5, 5] <- donor_sd
               export[base_rows + 6, 6] <- donor_cv
+              export[base_rows + 7, 2] <- n_informative
             } else {
-              data_only <- results[-nrow(results), ]
-              d1_mean <- na.omit(data_only[, "Donor_1%_Mean"])[1] * 100
-              d2_mean <- na.omit(data_only[, "Donor_2%_Mean"])[1] * 100
-              r_mean  <- na.omit(data_only[, "Recipient%_Mean"])[1] * 100
-              d1_sd   <- na.omit(data_only[, "Donor_1%_SD"])[1] * 100
-              d2_sd   <- na.omit(data_only[, "Donor_2%_SD"])[1] * 100
-              r_sd    <- na.omit(data_only[, "Recipient%_SD"])[1] * 100
-              d1_cv   <- na.omit(data_only[, "Donor_1%_CV"])[1] * 100
-              d2_cv   <- na.omit(data_only[, "Donor_2%_CV"])[1] * 100
-              r_cv    <- na.omit(data_only[, "Recipient%_CV"])[1] * 100
+              data_only  <- results[-nrow(results), ]
+              d1_mean    <- na.omit(data_only[, "Donor_1%_Mean"])[1] * 100
+              d2_mean    <- na.omit(data_only[, "Donor_2%_Mean"])[1] * 100
+              r_mean     <- na.omit(data_only[, "Recipient%_Mean"])[1] * 100
+              d1_sd      <- na.omit(data_only[, "Donor_1%_SD"])[1] * 100
+              d2_sd      <- na.omit(data_only[, "Donor_2%_SD"])[1] * 100
+              r_sd       <- na.omit(data_only[, "Recipient%_SD"])[1] * 100
+              d1_cv      <- na.omit(data_only[, "Donor_1%_CV"])[1] * 100
+              d2_cv      <- na.omit(data_only[, "Donor_2%_CV"])[1] * 100
+              r_cv       <- na.omit(data_only[, "Recipient%_CV"])[1] * 100
+              n_inf_d1   <- as.integer(results["Info#", "Donor_1%_Mean"])
+              n_inf_d2   <- as.integer(results["Info#", "Donor_2%_Mean"])
+              n_inf_r    <- as.integer(results["Info#", "Recipient%_Mean"])
 
               labels <- c(
                 "", "SUMMARY",
                 "Donor_1%_Mean (%)", "Donor_2%_Mean (%)", "Recipient%_Mean (%)",
                 "Donor_1%_SD (%)", "Donor_2%_SD (%)", "Recipient%_SD (%)",
-                "Donor_1%_CV (%)", "Donor_2%_CV (%)", "Recipient%_CV (%)"
+                "Donor_1%_CV (%)", "Donor_2%_CV (%)", "Recipient%_CV (%)",
+                "Inf. Loci D1 (N)", "Inf. Loci D2 (N)", "Inf. Loci R (N)"
               )
               export[base_rows + seq_along(labels), 1] <- labels
               export[base_rows + 3, 3]  <- d1_mean
@@ -384,8 +401,11 @@ build_server <- function() {
               export[base_rows + 7, 8]  <- d2_sd
               export[base_rows + 8, 12] <- r_sd
               export[base_rows + 9, 5]  <- d1_cv
-              export[base_rows + 10, 9]  <- d2_cv
+              export[base_rows + 10, 9] <- d2_cv
               export[base_rows + 11, 13] <- r_cv
+              export[base_rows + 12, 2]  <- n_inf_d1
+              export[base_rows + 13, 6]  <- n_inf_d2
+              export[base_rows + 14, 10] <- n_inf_r
             }
 
             writexl::write_xlsx(export, fname)

@@ -168,6 +168,55 @@ test_that("chiDD_sd_computation_uses_only_informative_loci", {
   expect_equal(m1_sd, sd(pcts), tolerance = 1e-6)
 })
 
+test_that("chiDD_ignore_unknown_alleles_false_returns_dataframe", {
+  d1 <- make_file(make_row("M1", "14", 1000), make_row("M1", "16", 1000))
+  d2 <- make_file(make_row("M1", "18", 1000))
+  r  <- make_file(make_row("M1", "22", 1000))
+  s  <- make_file(make_row("M1", "14", 800), make_row("M1", "16", 300),
+                  make_row("M1", "18", 200), make_row("M1", "12.1", 100))
+  loc <- build_locDD(d1, d2, r, "M1"); p <- unpack_locDD(loc)
+  result <- chiDD(s, "M1", p$profile, p$ru, p$rt, p$rnn, p$d1nn, p$d2nn,
+                  p$d1u, p$d2u, p$d1t, p$d2t, p$r,
+                  ignore_unknown_alleles = FALSE)
+  expect_s3_class(result, "data.frame")
+})
+
+test_that("chiDD_ignore_unknown_alleles_true_proceeds_without_error", {
+  d1 <- make_file(make_row("M1", "14", 1000), make_row("M1", "16", 1000))
+  d2 <- make_file(make_row("M1", "18", 1000))
+  r  <- make_file(make_row("M1", "22", 1000))
+  s  <- make_file(make_row("M1", "14", 800), make_row("M1", "16", 300),
+                  make_row("M1", "18", 200), make_row("M1", "12.1", 100))
+  loc <- build_locDD(d1, d2, r, "M1"); p <- unpack_locDD(loc)
+  result <- chiDD(s, "M1", p$profile, p$ru, p$rt, p$rnn, p$d1nn, p$d2nn,
+                  p$d1u, p$d2u, p$d1t, p$d2t, p$r,
+                  ignore_unknown_alleles = TRUE)
+  expect_true(is.list(result))
+  expect_length(result, 2)
+})
+
+test_that("chiDD_ignore_unknown_alleles_true_result_equals_run_without_unknown_peak", {
+  d1       <- make_file(make_row("M1", "14", 1000), make_row("M1", "16", 1000))
+  d2       <- make_file(make_row("M1", "18", 1000))
+  r        <- make_file(make_row("M1", "22", 1000))
+  s_clean  <- make_file(make_row("M1", "14", 800), make_row("M1", "16", 300),
+                        make_row("M1", "18", 200), make_row("M1", "22", 100))
+  s_noisy  <- make_file(make_row("M1", "14", 800), make_row("M1", "16", 300),
+                        make_row("M1", "18", 200), make_row("M1", "22", 100),
+                        make_row("M1", "12.1", 50))
+  loc <- build_locDD(d1, d2, r, "M1"); p <- unpack_locDD(loc)
+  res_clean <- chiDD(s_clean, "M1", p$profile, p$ru, p$rt, p$rnn, p$d1nn, p$d2nn,
+                     p$d1u, p$d2u, p$d1t, p$d2t, p$r)
+  res_noisy <- chiDD(s_noisy, "M1", p$profile, p$ru, p$rt, p$rnn, p$d1nn, p$d2nn,
+                     p$d1u, p$d2u, p$d1t, p$d2t, p$r,
+                     ignore_unknown_alleles = TRUE)
+  expect_equal(
+    unname(res_clean[[1]]["M1", "Donor_1%"]),
+    unname(res_noisy[[1]]["M1", "Donor_1%"]),
+    tolerance = 1e-9
+  )
+})
+
 test_that("chiDD_info_row_counts_nonempty_loci", {
   d1 <- make_file(make_row("M1", "14", 1000), make_row("M1", "16", 1000))
   d2 <- make_file(make_row("M1", "18", 1000))

@@ -161,6 +161,48 @@ test_that("chiSD_returns_list_of_two_with_correct_column_names", {
   expect_true("Sum" %in% colnames(result[[2]]))
 })
 
+test_that("chiSD_ignore_unknown_alleles_false_returns_dataframe", {
+  d <- make_file(make_row("M1", "14", 1000), make_row("M1", "16", 1000))
+  r <- make_file(make_row("M1", "14", 1000))
+  s <- make_file(make_row("M1", "14", 800), make_row("M1", "16", 500),
+                 make_row("M1", "12.1", 300))
+  loc    <- build_locSD(d, r, "M1")
+  result <- chiSD(s, "M1", loc[[2]], loc[[3]], loc[[4]], loc[[7]], loc[[8]],
+                  ignore_unknown_alleles = FALSE)
+  expect_s3_class(result, "data.frame")
+})
+
+test_that("chiSD_ignore_unknown_alleles_true_proceeds_without_error", {
+  # Allele "12.1" unknown (not in donor or recipient) but analysis should complete
+  d <- make_file(make_row("M1", "14", 1000), make_row("M1", "16", 1000))
+  r <- make_file(make_row("M1", "14", 1000))
+  s <- make_file(make_row("M1", "14", 800), make_row("M1", "16", 500),
+                 make_row("M1", "12.1", 300))
+  loc    <- build_locSD(d, r, "M1")
+  result <- chiSD(s, "M1", loc[[2]], loc[[3]], loc[[4]], loc[[7]], loc[[8]],
+                  ignore_unknown_alleles = TRUE)
+  expect_true(is.list(result))
+  expect_length(result, 2)
+})
+
+test_that("chiSD_ignore_unknown_alleles_true_result_equals_run_without_unknown_peak", {
+  # Ignoring "12.1" should yield same donor% as sample without it
+  d    <- make_file(make_row("M1", "14", 1000), make_row("M1", "16", 1000))
+  r    <- make_file(make_row("M1", "14", 1000))
+  s_clean  <- make_file(make_row("M1", "14", 800), make_row("M1", "16", 500))
+  s_noisy  <- make_file(make_row("M1", "14", 800), make_row("M1", "16", 500),
+                        make_row("M1", "12.1", 300))
+  loc <- build_locSD(d, r, "M1")
+  res_clean <- chiSD(s_clean, "M1", loc[[2]], loc[[3]], loc[[4]], loc[[7]], loc[[8]])
+  res_noisy <- chiSD(s_noisy, "M1", loc[[2]], loc[[3]], loc[[4]], loc[[7]], loc[[8]],
+                     ignore_unknown_alleles = TRUE)
+  expect_equal(
+    unname(res_clean[[1]]["M1", "Donor%"]),
+    unname(res_noisy[[1]]["M1", "Donor%"]),
+    tolerance = 1e-9
+  )
+})
+
 test_that("chiSD_sample_matrix_marks_unknown_allele_sentinel", {
   d <- make_file(make_row("M1", "12", 1000), make_row("M1", "14", 1000),
                  make_row("M1", "16", 1000))

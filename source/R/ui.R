@@ -49,6 +49,10 @@ build_ui <- function() {
           shiny::uiOutput("gm_role_ui")
         ),
 
+        shiny::checkboxInput("ignore_unknown_alleles",
+                             "Ignore unrecognized sample alleles",
+                             value = FALSE),
+
         shiny::actionButton("run_locSD_button", "Read input files"),
         shiny::br(),
         shiny::br(),

@@ -12,7 +12,8 @@
 #'
 #'
 
-chiSD <- function(sdata, markers, profile, rt, dt, d, r) {
+chiSD <- function(sdata, markers, profile, rt, dt, d, r,
+                  ignore_unknown_alleles = FALSE) {
 
 sample_data <- sdata
 
@@ -31,7 +32,8 @@ sample_peaks <- sample_peaks[(sample_peaks[, 1] %in% rownames(sample_presence)),
 
 if (nrow(sample_peaks[!(sample_peaks[, 2] %in% colnames(sample_presence)), ]) != 0) {
   false_calls <- sample_peaks[!(sample_peaks[, 2] %in% colnames(sample_presence)), ]
-  return(false_calls)
+  if (!ignore_unknown_alleles) return(false_calls)
+  sample_peaks <- sample_peaks[sample_peaks[, 2] %in% colnames(sample_presence), ]
 }
 
 sample_presence[as.matrix(sample_peaks[, 1:2])] <- 1
