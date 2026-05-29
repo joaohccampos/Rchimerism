@@ -315,8 +315,24 @@ build_server <- function() {
         if (UNKNOWN_ALLELE_SENTINEL %in% sm) {
           output$s_matrix <- matrix_output(sm, 1, as.character(UNKNOWN_ALLELE_SENTINEL))
           shiny::showModal(shiny::modalDialog(
-            paste("Clear '", UNKNOWN_ALLELE_SENTINEL, "' from Sample Matrix search box to remove filter"),
-            title = paste("Found '", UNKNOWN_ALLELE_SENTINEL, "' value(s) in Sample Allele Matrix, review sample data")
+            title = "Unclassified allele(s) in sample data",
+            shiny::tags$p(
+              "One or more alleles in the sample were found at positions where",
+              shiny::tags$b("neither donor nor recipient"),
+              "carries that allele (marked as",
+              shiny::tags$b(as.character(UNKNOWN_ALLELE_SENTINEL)),
+              "in the Sample Matrix)."
+            ),
+            shiny::tags$p(
+              "Possible causes: stutter peaks, pull-up artifacts, or a genuine allele",
+              "not present in the reference samples."
+            ),
+            shiny::tags$p(
+              "The analysis has proceeded normally.",
+              "Review the highlighted rows in the Sample Matrix.",
+              paste0("To remove the filter, clear '", UNKNOWN_ALLELE_SENTINEL,
+                     "' from the search box above the table.")
+            )
           ))
         } else {
           output$s_matrix <- matrix_output(sm, 1)
@@ -329,8 +345,24 @@ build_server <- function() {
         if (UNKNOWN_ALLELE_SENTINEL %in% sm) {
           output$s_dd_matrix <- matrix_output(sm, 1, as.character(UNKNOWN_ALLELE_SENTINEL))
           shiny::showModal(shiny::modalDialog(
-            paste("Clear '", UNKNOWN_ALLELE_SENTINEL, "' from Sample Matrix search box to remove filter"),
-            title = paste("Found '", UNKNOWN_ALLELE_SENTINEL, "' value(s) in Sample Allele Matrix, review sample data")
+            title = "Unclassified allele(s) in sample data",
+            shiny::tags$p(
+              "One or more alleles in the sample were found at positions where",
+              shiny::tags$b("neither donor nor recipient"),
+              "carries that allele (marked as",
+              shiny::tags$b(as.character(UNKNOWN_ALLELE_SENTINEL)),
+              "in the Sample Matrix)."
+            ),
+            shiny::tags$p(
+              "Possible causes: stutter peaks, pull-up artifacts, or a genuine allele",
+              "not present in the reference samples."
+            ),
+            shiny::tags$p(
+              "The analysis has proceeded normally.",
+              "Review the highlighted rows in the Sample Matrix.",
+              paste0("To remove the filter, clear '", UNKNOWN_ALLELE_SENTINEL,
+                     "' from the search box above the table.")
+            )
           ))
         } else {
           output$s_dd_matrix <- matrix_output(sm, 1)
